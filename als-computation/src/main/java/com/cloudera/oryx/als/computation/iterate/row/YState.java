@@ -34,37 +34,51 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 
-final class YState implements Serializable {
+public final class YState implements Serializable {
 
   private static final Logger log = LoggerFactory.getLogger(YState.class);
 
   private final PType<MatrixRow> ptype;
+  private final String popularKey;
+  private final String yKeyKey;
+
   private transient LongObjectMap<float[]> Y;
   private transient RealMatrix YTY;
 
-  YState(PType<MatrixRow> ptype) {
+  public YState(PType<MatrixRow> ptype) {
+    this(ptype, null, null);
+  }
+
+  public YState(PType<MatrixRow> ptype, String popularKey, String yKeyKey) {
     this.ptype = ptype;
+    this.popularKey = popularKey;
+    this.yKeyKey = yKeyKey;
   }
 
   synchronized void initialize(TaskInputOutputContext<?,?,?,?> context,
                                int currentPartition,
                                int numPartitions) {
+    if (YTY != null) {
+      // Already initialized
+      return;
+    }
 
     Configuration conf = context.getConfiguration();
+    ptype.initialize(conf);
 
     LongSet expectedIDs;
     try {
       expectedIDs = ComputationDataUtils.readExpectedIDsFromPartition(
           currentPartition,
           numPartitions,
-          conf.get(RowStep.POPULAR_KEY),
+          popularKey == null ? conf.get(RowStep.POPULAR_KEY) : popularKey,
           context,
           conf);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
 
-    String yKey = conf.get(RowStep.Y_KEY_KEY);
+    String yKey = yKeyKey == null ? conf.get(RowStep.Y_KEY_KEY) : yKeyKey;
     log.info("Reading X or Y from {}", yKey);
 
     Y = new LongObjectMap<float[]>();

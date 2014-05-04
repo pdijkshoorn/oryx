@@ -33,17 +33,23 @@ public final class ConvergenceSampleFn extends OryxReduceDoFn<Long, float[], Str
   private int convergenceSamplingModulus;
 
   public ConvergenceSampleFn(YState yState) {
+    this(yState, -1);
+  }
+
+  public ConvergenceSampleFn(YState yState, int modulus) {
     this.yState = yState;
+    this.convergenceSamplingModulus = modulus;
   }
 
   @Override
   public void initialize() {
     super.initialize();
-    convergenceSamplingModulus = getConfiguration().getInt(RowStep.CONVERGENCE_SAMPLING_MODULUS_KEY, -1);
+    if (convergenceSamplingModulus <= 0) {
+      convergenceSamplingModulus = getConfiguration().getInt(RowStep.CONVERGENCE_SAMPLING_MODULUS_KEY, -1);
+    }
     if (convergenceSamplingModulus >= 0) {
       Preconditions.checkArgument(convergenceSamplingModulus >= 0,
-          "Not specified: %s",
-          RowStep.CONVERGENCE_SAMPLING_MODULUS_KEY);
+          "Not specified: %s", RowStep.CONVERGENCE_SAMPLING_MODULUS_KEY);
       log.info("Sampling for convergence where user/item ID == 0 % {}", convergenceSamplingModulus);
     }
     yState.initialize(getContext(), getPartition(), getNumPartitions());

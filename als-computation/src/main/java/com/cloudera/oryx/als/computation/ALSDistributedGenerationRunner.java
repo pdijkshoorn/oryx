@@ -225,8 +225,7 @@ public final class ALSDistributedGenerationRunner extends DistributedGenerationR
     postDeps.add(DependsOn.<Class<? extends JobStep>>first(PublishXStep.class));
     postDeps.add(DependsOn.<Class<? extends JobStep>>first(PublishYStep.class));
     if (config.getBoolean("model.recommend.compute")) {
-      postDeps.add(DependsOn.<Class<? extends JobStep>>nextAfterFirst(RecommendStep.class,
-                                                                      DistributeRecommendWorkStep.class));
+      postDeps.add(DependsOn.<Class<? extends JobStep>>nextAfterFirst(RecommendStep.class, DistributeRecommendWorkStep.class));
       postDeps.add(DependsOn.<Class<? extends JobStep>>nextAfterFirst(CollectRecommendStep.class, RecommendStep.class));
     }
     if (config.getBoolean("model.item-similarity.compute")) {

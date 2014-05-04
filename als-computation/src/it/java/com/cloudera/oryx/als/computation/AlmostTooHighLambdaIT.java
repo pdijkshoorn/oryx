@@ -33,7 +33,7 @@ public final class AlmostTooHighLambdaIT extends AbstractComputationIT {
     return getResourceAsFile("highlambda");
   }
 
-  @Test
+  //@Test
   public void testWaitForBuild() throws Exception {
     ServerRecommender client = getRecommender();
     client.ingest(new File(TEST_TEMP_INBOUND_DIR, "lambda.csv.gz"));

@@ -83,9 +83,11 @@ public final class ComputationDataUtils {
     }
 
     List<String> partitionFileKeys = store.list(partitionsPrefix, true);
-    Preconditions.checkState(partitionFileKeys.size() == numPartitions,
-                             "Number of partitions doesn't match number of ID files (%s vs %s). " +
-                                 "Was the number of reducers changed?", partitionFileKeys.size(), numPartitions);
+    if (partitionFileKeys.size() != numPartitions) {
+      log.warn("Number of partitions doesn't match number of ID files ({} vs {}). " +
+          "Was the number of reducers changed?", partitionFileKeys.size(), numPartitions);
+      return null;
+    }
 
     // Shuffle order that the many reducers read the many files
     Collections.shuffle(partitionFileKeys);

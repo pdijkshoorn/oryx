@@ -21,9 +21,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 
+import com.cloudera.oryx.computation.common.supplier.MRPipelineSupplier;
 import com.google.common.base.Preconditions;
 import com.typesafe.config.Config;
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.Source;
 import org.apache.crunch.Target;
@@ -247,87 +249,8 @@ public abstract class JobStep extends Configured implements Tool, HasState {
    *
    * @return a new {@link MRPipeline} instance, suitably configured
    */
-  protected final MRPipeline createBasicPipeline(Class<?> jarClass) throws IOException {
-    Configuration conf = OryxConfiguration.get(getConf());
-
-    conf.setBoolean(MRJobConfig.MAP_OUTPUT_COMPRESS, true);
-    conf.setClass(MRJobConfig.MAP_OUTPUT_COMPRESS_CODEC, SnappyCodec.class, CompressionCodec.class);
-
-    conf.setBoolean("mapred.output.compress", true);
-    conf.set("mapred.output.compression.type", "BLOCK");
-    conf.setClass("mapred.output.compression.codec", SnappyCodec.class, CompressionCodec.class);
-    // Set old-style equivalents for Avro/Crunch's benefit
-    conf.set("avro.output.codec", "snappy");
-
-    conf.setBoolean(MRJobConfig.MAP_SPECULATIVE, true);
-    conf.setBoolean(MRJobConfig.REDUCE_SPECULATIVE, true);
-    conf.setBoolean(TTConfig.TT_OUTOFBAND_HEARBEAT, true);
-    conf.setInt(MRJobConfig.JVM_NUMTASKS_TORUN, -1);
-
-    //conf.setBoolean("crunch.disable.deep.copy", true);
-    // Giving one mapper a lot of data can cause issues in some stages, so default to disable this
-    conf.setBoolean("crunch.disable.combine.file", true);
-
-    Config appConfig = ConfigUtils.getDefaultConfig();
-
-    int mapMemoryMB = appConfig.getInt("computation-layer.mapper-memory-mb");
-    log.info("Mapper memory: {}", mapMemoryMB);
-    int mapHeapMB = (int) (mapMemoryMB / 1.3); // Matches Hadoop's default
-    log.info("Mappers have {}MB heap and can access {}MB RAM", mapHeapMB, mapMemoryMB);
-    if (conf.get(MRJobConfig.MAP_JAVA_OPTS) != null) {
-      log.info("Overriding previous setting of {}, which was '{}'",
-               MRJobConfig.MAP_JAVA_OPTS,
-               conf.get(MRJobConfig.MAP_JAVA_OPTS));
-    }
-    conf.set(MRJobConfig.MAP_JAVA_OPTS,
-             "-Xmx" + mapHeapMB + "m -XX:+UseCompressedOops -XX:+UseParallelGC -XX:+UseParallelOldGC");
-    log.info("Set {} to '{}'", MRJobConfig.MAP_JAVA_OPTS, conf.get(MRJobConfig.MAP_JAVA_OPTS));
-    // See comment below on CM
-    conf.setInt("mapreduce.map.java.opts.max.heap", mapHeapMB);
-
-    int reduceMemoryMB = appConfig.getInt("computation-layer.reducer-memory-mb");
-    log.info("Reducer memory: {}", reduceMemoryMB);
-    if (isHighMemoryStep()) {
-      reduceMemoryMB *= appConfig.getInt("computation-layer.worker-high-memory-factor");
-      log.info("Increasing {} to {} for high-memory step", MRJobConfig.REDUCE_MEMORY_MB, reduceMemoryMB);
-    }
-    conf.setInt(MRJobConfig.REDUCE_MEMORY_MB, reduceMemoryMB);
-
-    int reduceHeapMB = (int) (reduceMemoryMB / 1.3); // Matches Hadoop's default
-    log.info("Reducers have {}MB heap and can access {}MB RAM", reduceHeapMB, reduceMemoryMB);
-    if (conf.get(MRJobConfig.REDUCE_JAVA_OPTS) != null) {
-      log.info("Overriding previous setting of {}, which was '{}'",
-               MRJobConfig.REDUCE_JAVA_OPTS,
-               conf.get(MRJobConfig.REDUCE_JAVA_OPTS));
-    }
-    conf.set(MRJobConfig.REDUCE_JAVA_OPTS,
-             "-Xmx" + reduceHeapMB + "m -XX:+UseCompressedOops -XX:+UseParallelGC -XX:+UseParallelOldGC");
-    log.info("Set {} to '{}'", MRJobConfig.REDUCE_JAVA_OPTS, conf.get(MRJobConfig.REDUCE_JAVA_OPTS));
-    // I see this in CM but not in Hadoop docs; probably won't hurt as it's supposed to result in
-    // -Xmx appended to opts above, which is at worst redundant
-    conf.setInt("mapreduce.reduce.java.opts.max.heap", reduceHeapMB);
-
-    conf.setInt("yarn.scheduler.capacity.minimum-allocation-mb", 128);
-    conf.setInt("yarn.app.mapreduce.am.resource.mb", 384);
-
-    // Pass total config state
-    conf.set(CONFIG_SERIALIZATION_KEY, ConfigUtils.getDefaultConfig().root().render());
-
-    // Make sure to set any args to conf above this line!
-
-    setConf(conf);
-
-    Job job = Job.getInstance(conf);
-
-    // Basic File IO settings
-    FileInputFormat.setMaxInputSplitSize(job, 1L << 28); // ~268MB
-    SequenceFileOutputFormat.setOutputCompressionType(job, SequenceFile.CompressionType.BLOCK);
-    FileOutputFormat.setCompressOutput(job, true);
-    FileOutputFormat.setOutputCompressorClass(job, SnappyCodec.class);
-
-    log.info("Created pipeline configuration {}", job.getConfiguration());
-
-    return new MRPipeline(jarClass, getCustomJobName(), job.getConfiguration());
+  protected MRPipeline createBasicPipeline(Class<?> jarClass) throws IOException {
+    return (MRPipeline) new MRPipelineSupplier(getConf(), getCustomJobName(), jarClass).get(isHighMemoryStep());
   }
 
   protected final boolean validOutputPath(String outputPathKey) throws IOException {

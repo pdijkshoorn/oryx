@@ -183,6 +183,10 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils-core</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>org.jboss.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -337,6 +341,40 @@
       </dependency>
 
       <dependency>
+        <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch-spark_2.10</artifactId>
+        <version>${crunch.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_2.10</artifactId>
+        <version>${spark.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>${scala.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>4.11</version>
@@ -378,9 +416,9 @@
     <!-- Don't update to 1.7.5+ until Hadoop uses Jackson 1.9+ -->
     <avro.version>1.7.4</avro.version>
     <hadoop.version>2.3.0</hadoop.version>
-    <!-- Avoid 0.9.0 / 0.8.2 due to compatibility issue: -->
+    <spark.version>0.9.1</spark.version>
+    <scala.version>2.10.4</scala.version>
     <crunch.version>0.10.0-hadoop2</crunch.version>
-    <!-- our custom props -->
     <module.jspx.package>override-me</module.jspx.package>
   </properties>
 
@@ -960,6 +998,15 @@
       <id>hadoop200</id>
       <properties>
         <hadoop.version>2.0.0-cdh4.7.0</hadoop.version>
+        <crunch.version>0.10.0-SNAPSHOT</crunch.version>
+      </properties>
+    </profile>
+    <!-- Separate profile for 2.3.0 because of thinks like enum difference in JobContext? -->
+    <profile>
+      <id>hadoop230+</id>
+      <properties>
+        <hadoop.version>2.3.0</hadoop.version>
+        <crunch.version>0.10.0-hadoop2</crunch.version>
       </properties>
     </profile>
   </profiles>
