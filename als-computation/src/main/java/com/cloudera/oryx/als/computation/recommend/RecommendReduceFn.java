@@ -36,12 +36,21 @@ public final class RecommendReduceFn extends OryxReduceDoFn<Integer,
 
   private int numRecs;
   private LongObjectMap<float[]> partialY;
+  private String yKey;
+
+  public RecommendReduceFn() {
+    this(null);
+  }
+
+  public RecommendReduceFn(String yKey) {
+    this.yKey = yKey;
+  }
 
   @Override
   public void initialize() {
     super.initialize();
     Configuration conf = getConfiguration();
-    String yKey = conf.get(RecommendStep.Y_KEY_KEY);
+    String yKey = this.yKey == null ? conf.get(RecommendStep.Y_KEY_KEY) : this.yKey;
     try {
       partialY = ComputationDataUtils.loadPartialY(getPartition(), getNumPartitions(), yKey, conf);
     } catch (IOException e) {
@@ -54,7 +63,7 @@ public final class RecommendReduceFn extends OryxReduceDoFn<Integer,
   @Override
   public void process(Pair<Integer, Iterable<Pair<Long, Pair<float[], LongSet>>>> input,
                       Emitter<Pair<Long, NumericIDValue>> emitter) {
-    Preconditions.checkState(input.first() == getPartition(),
+    Preconditions.checkState(getNumPartitions() == 1 || input.first() == getPartition(),
         "Key must match partition: %s != %s", input.first(), getPartition());
     for (Pair<Long, Pair<float[], LongSet>> value : input.second()) {
       long userID = value.first();

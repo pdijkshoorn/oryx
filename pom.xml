@@ -220,6 +220,12 @@
       </dependency>
 
       <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
@@ -415,6 +421,7 @@
     <tomcat.version>7.0.55</tomcat.version>
     <!-- Don't update to 1.7.5+ until Hadoop uses Jackson 1.9+ -->
     <avro.version>1.7.4</avro.version>
+    <protobuf.version>2.5.0</protobuf.version>
     <hadoop.version>2.3.0</hadoop.version>
     <spark.version>0.9.1</spark.version>
     <scala.version>2.10.4</scala.version>

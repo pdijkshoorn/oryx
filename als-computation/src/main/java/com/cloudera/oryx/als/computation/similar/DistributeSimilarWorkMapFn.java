@@ -28,10 +28,20 @@ public final class DistributeSimilarWorkMapFn extends DoFn<MatrixRow, Pair<Integ
 
   private int numReducers;
 
+  public DistributeSimilarWorkMapFn() {
+    this(0);
+  }
+
+  public DistributeSimilarWorkMapFn(int numReducers) {
+    this.numReducers = numReducers;
+  }
+
   @Override
   public void initialize() {
     super.initialize();
-    numReducers = getContext().getNumReduceTasks();
+    if (numReducers == 0) {
+      numReducers = getContext().getNumReduceTasks();
+    }
     log.info("Distributing data to {} reducers", numReducers);
   }
 

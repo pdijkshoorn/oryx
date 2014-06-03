@@ -63,7 +63,7 @@ public final class ComputationDataUtils {
         (AvroType<MatrixRow>) ALSTypes.DENSE_ROW_MATRIX);
     for (MatrixRow record : records.read(conf)) {
       long id = record.getRowId();
-      if (LongMath.mod(id, numPartitions) == partition) {
+      if (numPartitions == 1 || LongMath.mod(id, numPartitions) == partition) {
         result.put(id, record.getValues());
       }
     }

@@ -40,10 +40,18 @@ import com.cloudera.oryx.als.computation.merge.TransposeUserItemFn;
 import com.cloudera.oryx.als.computation.popular.PopularMapFn;
 import com.cloudera.oryx.als.computation.popular.PopularReduceFn;
 import com.cloudera.oryx.als.computation.publish.PublishMapFn;
+import com.cloudera.oryx.als.computation.recommend.CollectRecommendFn;
+import com.cloudera.oryx.als.computation.recommend.DistributeRecommendWorkFn;
+import com.cloudera.oryx.als.computation.recommend.KnownItemsFn;
+import com.cloudera.oryx.als.computation.recommend.RecommendReduceFn;
+import com.cloudera.oryx.als.computation.similar.DistributeSimilarWorkMapFn;
+import com.cloudera.oryx.als.computation.similar.DistributeSimilarWorkReduceFn;
+import com.cloudera.oryx.als.computation.similar.SimilarReduceFn;
 import com.cloudera.oryx.als.computation.types.ALSTypes;
 import com.cloudera.oryx.als.computation.types.MatrixRow;
 import com.cloudera.oryx.common.collection.LongFloatMap;
 import com.cloudera.oryx.common.collection.LongObjectMap;
+import com.cloudera.oryx.common.collection.LongSet;
 import com.cloudera.oryx.common.io.DelimitedDataUtils;
 import com.cloudera.oryx.common.random.RandomUtils;
 import com.cloudera.oryx.common.servcomp.Namespaces;
@@ -60,10 +68,13 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
-import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Target;
+import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Channels;
 import org.apache.crunch.lib.PTables;
+import org.apache.crunch.lib.join.DefaultJoinStrategy;
+import org.apache.crunch.lib.join.JoinStrategy;
+import org.apache.crunch.lib.join.JoinType;
 import org.apache.crunch.lib.join.JoinUtils;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
@@ -84,10 +95,6 @@ public class ALSModelBuilder extends AbstractModelBuilder<String, String, ALSJob
       ALSTypes.IDVALUE);
 
   private final Store store;
-
-  public ALSModelBuilder() {
-    this(Store.get());
-  }
 
   public ALSModelBuilder(Store store) {
     this.store = Preconditions.checkNotNull(store);
@@ -137,8 +144,9 @@ public class ALSModelBuilder extends AbstractModelBuilder<String, String, ALSJob
     int iteration = 1;
     PCollection<MatrixRow> X = null, Y = initialY;
     Iterable<String> prevSample = null;
+    String iterationKey = null;
     while (!iterationsDone) {
-      String iterationKey = iterationPrefix + iteration + "/";
+      iterationKey = iterationPrefix + iteration + "/";
 
       // X Phase
       X = update(userVectors, new YState(ALSTypes.DENSE_ROW_MATRIX, tempPrefix + "popularItemsByUserPartition/",
@@ -168,7 +176,72 @@ public class ALSModelBuilder extends AbstractModelBuilder<String, String, ALSJob
       log.info("X/ and Y/ already exist under {}, nothing to do", instancePrefix);
     }
 
+    if (getConfig().getBoolean("model.recommend.compute") || getConfig().getBoolean("model.item-similarity.compute")) {
+      MRPipeline mrp = new MRPipeline(RecommendReduceFn.class, p.getConfiguration());
+      if (getConfig().getBoolean("model.recommend.compute")) {
+        PCollection<String> knownItems = mrp.read(textInput(instancePrefix + "knownItems/"));
+        PCollection<MatrixRow> Xprime = mrp.read(input(iterationKey + "X/", ALSTypes.DENSE_ROW_MATRIX));
+        PTable<Integer, Pair<Long, Pair<float[], LongSet>>> distRecs = distributeRecs(knownItems, Xprime)
+            .write(output(tempPrefix + "distributeRecommend/"), Target.WriteMode.CHECKPOINT);
+        PTable<Long, NumericIDValue> partialRecs = partialRecs(distRecs, iterationKey + "Y/")
+            .write(output(tempPrefix + "partialRecommend/"), Target.WriteMode.CHECKPOINT);
+        collectRecs(partialRecs, instancePrefix + "idMapping/")
+            .write(compressedTextOutput(conf, instancePrefix + "recommend/"), Target.WriteMode.CHECKPOINT);
+      }
+
+      if (getConfig().getBoolean("model.item-similarity.compute")) {
+        PCollection<MatrixRow> Yprime = mrp.read(input(iterationKey + "Y/", ALSTypes.DENSE_ROW_MATRIX));
+        PTable<Long, NumericIDValue> distSimilar = distributeSimilar(Yprime, iterationKey + "Y/")
+            .write(output(tempPrefix + "distributeSimilar/"), Target.WriteMode.CHECKPOINT);
+        similar(distSimilar, instancePrefix + "idMapping/")
+            .write(compressedTextOutput(conf, instancePrefix + "similarItems/"), Target.WriteMode.CHECKPOINT);
+      }
+
+      mrp.run();
+    }
+
     return instancePrefix;
+  }
+
+  PCollection<String> collectRecs(PTable<Long, NumericIDValue> partialRecs, String idMappingPrefix) {
+    return partialRecs.groupByKey(groupingOptions())
+        .parallelDo("collectRecommend", new CollectRecommendFn(idMappingPrefix), Avros.strings());
+  }
+
+  PTable<Long, NumericIDValue> partialRecs(
+      PTable<Integer, Pair<Long, Pair<float[], LongSet>>> distRecs,
+      String yKey) {
+    return PTables.asPTable(distRecs
+        .groupByKey(groupingOptions())
+        .parallelDo("recommend", new RecommendReduceFn(yKey), ALSTypes.VALUE_MATRIX));
+  }
+
+  PTable<Integer, Pair<Long, Pair<float[], LongSet>>> distributeRecs(
+      PCollection<String> knownItemsText,
+      PCollection<MatrixRow> X) {
+    PTable<Long, LongSet> knownItems = knownItemsText.parallelDo("knownItems", new KnownItemsFn(),
+        Avros.tableOf(ALSTypes.LONGS, ALSTypes.ID_SET));
+    PTable<Long, float[]> userFeatures = X.parallelDo("asPair", MatrixRow.AS_PAIR,
+        Avros.tableOf(Avros.longs(), ALSTypes.FLOAT_ARRAY));
+
+    JoinStrategy<Long, float[], LongSet> joinStrategy = new DefaultJoinStrategy<Long, float[], LongSet>(
+        getNumReducers());
+    PTable<Long, Pair<float[], LongSet>> joined = joinStrategy.join(userFeatures, knownItems, JoinType.INNER_JOIN);
+
+    return PTables.asPTable(joined.parallelDo("distribute", new DistributeRecommendWorkFn(), ALSTypes.REC_TYPE));
+  }
+
+  PCollection<String> similar(PTable<Long, NumericIDValue> distSimilar, String idMappingPrefix) {
+    return distSimilar
+        .groupByKey(groupingOptions())
+        .parallelDo("similarReduce", new SimilarReduceFn(idMappingPrefix), Avros.strings());
+  }
+
+  PTable<Long, NumericIDValue> distributeSimilar(PCollection<MatrixRow> Y, String yKey) {
+    return PTables.asPTable(Y.parallelDo("distributeSimilarMap", new DistributeSimilarWorkMapFn(getNumReducers()),
+        Avros.tableOf(ALSTypes.INTS, ALSTypes.DENSE_ROW_MATRIX))
+        .groupByKey(groupingOptions())
+        .parallelDo("distributeSimilarReduce", new DistributeSimilarWorkReduceFn(yKey), ALSTypes.VALUE_MATRIX));
   }
 
 

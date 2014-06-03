@@ -17,19 +17,16 @@
  */
 package com.cloudera.oryx.als.computation.local;
 
-import com.cloudera.oryx.als.common.DataUtils;
 import com.cloudera.oryx.als.common.pmml.ALSModelDescription;
 import com.cloudera.oryx.als.computation.ALSJobStepConfig;
 import com.cloudera.oryx.als.computation.modelbuilder.ALSModelBuilder;
 import com.cloudera.oryx.common.io.IOUtils;
-import com.cloudera.oryx.common.iterator.FileLineIterable;
-import com.cloudera.oryx.common.math.MatrixUtils;
 import com.cloudera.oryx.common.servcomp.Namespaces;
 import com.cloudera.oryx.common.servcomp.Store;
 import com.cloudera.oryx.computation.common.JobException;
 import com.cloudera.oryx.computation.common.LocalGenerationRunner;
+import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.spark.SparkPipeline;
 import org.slf4j.Logger;
@@ -41,6 +38,14 @@ import java.io.IOException;
 public class ALSLocalSparkGenerationRunner extends LocalGenerationRunner {
 
   private static final Logger log = LoggerFactory.getLogger(ALSLocalSparkGenerationRunner.class);
+
+  private final String sparkMaster;
+
+  public ALSLocalSparkGenerationRunner() { this("local"); }
+
+  public ALSLocalSparkGenerationRunner(String sparkMaster) {
+    this.sparkMaster = Preconditions.checkNotNull(sparkMaster);
+  }
 
   @Override
   protected void runSteps() throws IOException, JobException, InterruptedException {
@@ -81,7 +86,7 @@ public class ALSLocalSparkGenerationRunner extends LocalGenerationRunner {
       }
 
       ALSModelBuilder modelBuilder = new ALSModelBuilder(store);
-      Pipeline sp = new SparkPipeline("local[4]", "als", this.getClass());
+      Pipeline sp = new SparkPipeline(sparkMaster, "ALS", this.getClass());
       modelBuilder.build(sp.readTextFile(currentInboundDir.getAbsolutePath()),
           new ALSJobStepConfig(getInstanceDir(), getGenerationID(), getLastGenerationID(), 0, false));
 

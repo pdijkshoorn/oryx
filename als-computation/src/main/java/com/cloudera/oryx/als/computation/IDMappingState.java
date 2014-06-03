@@ -31,8 +31,10 @@ public final class IDMappingState {
   private final StringLongMapping idMapping;
 
   public IDMappingState(Configuration conf) throws IOException {
-    this.idMapping = readIDMapping(conf.get(ID_MAPPING_KEY));
+    this(conf.get(ID_MAPPING_KEY));
   }
+
+  public IDMappingState(String prefix) throws IOException { this.idMapping = readIDMapping(prefix); }
 
   public StringLongMapping getIDMapping() {
     return idMapping;

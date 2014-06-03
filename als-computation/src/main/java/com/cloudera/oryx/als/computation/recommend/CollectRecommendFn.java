@@ -33,6 +33,13 @@ public final class CollectRecommendFn extends OryxReduceDoFn<Long, Iterable<Nume
 
   private int numRecs;
   private IDMappingState idMapping;
+  private String idMappingPrefix;
+
+  public CollectRecommendFn() { this(null); }
+
+  public CollectRecommendFn(String idMappingPrefix) {
+    this.idMappingPrefix = idMappingPrefix;
+  }
 
   @Override
   public void initialize() {
@@ -40,7 +47,8 @@ public final class CollectRecommendFn extends OryxReduceDoFn<Long, Iterable<Nume
     numRecs = ConfigUtils.getDefaultConfig().getInt("model.recommend.how-many");
     Preconditions.checkArgument(numRecs > 0, "# recommendations must be positive: %s", numRecs);
     try {
-      idMapping = new IDMappingState(getConfiguration());
+      idMapping = idMappingPrefix == null ? new IDMappingState(getConfiguration()) :
+          new IDMappingState(idMappingPrefix);
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
     }

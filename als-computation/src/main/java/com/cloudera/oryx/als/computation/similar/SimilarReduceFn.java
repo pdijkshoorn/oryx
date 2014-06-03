@@ -33,6 +33,15 @@ public final class SimilarReduceFn extends OryxReduceDoFn<Long, Iterable<Numeric
 
   private int numSimilar;
   private IDMappingState idMapping;
+  private String idMappingPrefix;
+
+  public SimilarReduceFn() {
+    this(null);
+  }
+
+  public SimilarReduceFn(String idMappingPrefix) {
+    this.idMappingPrefix = idMappingPrefix;
+  }
 
   @Override
   public void initialize() {
@@ -40,7 +49,8 @@ public final class SimilarReduceFn extends OryxReduceDoFn<Long, Iterable<Numeric
     numSimilar = ConfigUtils.getDefaultConfig().getInt("model.item-similarity.how-many");
     Preconditions.checkArgument(numSimilar > 0, "# similar must be positive: %s", numSimilar);
     try {
-      idMapping = new IDMappingState(getConfiguration());
+      idMapping = idMappingPrefix == null ? new IDMappingState(getConfiguration()) :
+          new IDMappingState(idMappingPrefix);
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
     }

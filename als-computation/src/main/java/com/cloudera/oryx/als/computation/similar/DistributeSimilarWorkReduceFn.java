@@ -33,14 +33,21 @@ import java.io.IOException;
 public final class DistributeSimilarWorkReduceFn extends
     OryxReduceDoFn<Integer, Iterable<MatrixRow>, Pair<Long, NumericIDValue>> {
 
+  private String yKey;
   private LongObjectMap<float[]> partialY;
   private int numSimilar;
+
+  public DistributeSimilarWorkReduceFn() { this(null); }
+
+  public DistributeSimilarWorkReduceFn(String yKey) {
+    this.yKey = yKey;
+  }
 
   @Override
   public void initialize() {
     super.initialize();
     Configuration conf = getConfiguration();
-    String yKey = conf.get(DistributeSimilarWorkStep.Y_KEY_KEY);
+    String yKey = this.yKey == null ? conf.get(DistributeSimilarWorkStep.Y_KEY_KEY) : this.yKey;
     try {
       partialY = ComputationDataUtils.loadPartialY(getPartition(), getNumPartitions(), yKey, conf);
     } catch (IOException e) {
@@ -52,7 +59,7 @@ public final class DistributeSimilarWorkReduceFn extends
 
   @Override
   public void process(Pair<Integer, Iterable<MatrixRow>> input, Emitter<Pair<Long, NumericIDValue>> emitter) {
-    Preconditions.checkState(input.first() == getPartition(),
+    Preconditions.checkState(getNumPartitions() == 1 || input.first() == getPartition(),
         "Key must match partition: %s != %s", input.first(), getPartition());
     for (MatrixRow value : input.second()) {
       long itemID = value.getRowId();
