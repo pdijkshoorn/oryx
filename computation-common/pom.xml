@@ -47,7 +47,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.crunch</groupId>
-      <artifactId>crunch-spark_2.10</artifactId>
+      <artifactId>crunch-spark</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>

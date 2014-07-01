@@ -348,7 +348,7 @@
 
       <dependency>
         <groupId>org.apache.crunch</groupId>
-        <artifactId>crunch-spark_2.10</artifactId>
+        <artifactId>crunch-spark</artifactId>
         <version>${crunch.version}</version>
         <exclusions>
           <exclusion>

@@ -17,14 +17,13 @@ package com.cloudera.oryx.als.computation;
 
 import java.io.File;
 
-import com.cloudera.oryx.als.computation.local.ALSLocalSparkGenerationRunner;
+import com.cloudera.oryx.als.computation.local.ALSSparkGenerationRunner;
 import com.google.common.io.Files;
 import org.junit.Assume;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.oryx.als.computation.local.ALSLocalGenerationRunner;
 import com.cloudera.oryx.als.serving.ServerRecommender;
 import com.cloudera.oryx.common.OryxTest;
 import com.cloudera.oryx.common.io.IOUtils;
@@ -73,7 +72,7 @@ public abstract class AbstractComputationIT extends OryxTest {
 
     ConfigUtils.overlayConfigOnDefault(getResourceAsFile(getClass().getSimpleName() + ".conf"));
 
-    new ALSLocalSparkGenerationRunner().call();
+    new ALSSparkGenerationRunner().call();
 
     recommender = new ServerRecommender(TEST_TEMP_INBOUND_DIR);
     recommender.await();

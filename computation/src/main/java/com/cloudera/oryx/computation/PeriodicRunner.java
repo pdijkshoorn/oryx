@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloudera.oryx.als.computation.local.ALSSparkGenerationRunner;
 import com.cloudera.oryx.kmeans.computation.local.KMeansLocalGenerationRunner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -68,7 +69,7 @@ public final class PeriodicRunner implements Runnable, Closeable {
   private static final Map<String,List<Class<? extends GenerationRunner>>> RUNNERS;
   static {
     List<Class<? extends GenerationRunner>> alsRunners = Lists.newArrayListWithCapacity(2);
-    alsRunners.add(ALSLocalGenerationRunner.class);
+    alsRunners.add(ALSSparkGenerationRunner.class);
     alsRunners.add(ALSDistributedGenerationRunner.class);
     List<Class<? extends GenerationRunner>> kmeansRunners = Lists.newArrayListWithCapacity(2);
     kmeansRunners.add(KMeansLocalGenerationRunner.class);

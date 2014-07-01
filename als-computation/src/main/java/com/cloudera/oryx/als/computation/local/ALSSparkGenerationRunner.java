@@ -23,6 +23,7 @@ import com.cloudera.oryx.als.computation.modelbuilder.ALSModelBuilder;
 import com.cloudera.oryx.common.io.IOUtils;
 import com.cloudera.oryx.common.servcomp.Namespaces;
 import com.cloudera.oryx.common.servcomp.Store;
+import com.cloudera.oryx.common.settings.ConfigUtils;
 import com.cloudera.oryx.computation.common.JobException;
 import com.cloudera.oryx.computation.common.LocalGenerationRunner;
 import com.google.common.base.Preconditions;
@@ -35,15 +36,15 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 
-public class ALSLocalSparkGenerationRunner extends LocalGenerationRunner {
+public class ALSSparkGenerationRunner extends LocalGenerationRunner {
 
-  private static final Logger log = LoggerFactory.getLogger(ALSLocalSparkGenerationRunner.class);
+  private static final Logger log = LoggerFactory.getLogger(ALSSparkGenerationRunner.class);
 
   private final String sparkMaster;
 
-  public ALSLocalSparkGenerationRunner() { this("local"); }
+  public ALSSparkGenerationRunner() { this(ConfigUtils.getDefaultConfig().getString("spark-master")); }
 
-  public ALSLocalSparkGenerationRunner(String sparkMaster) {
+  public ALSSparkGenerationRunner(String sparkMaster) {
     this.sparkMaster = Preconditions.checkNotNull(sparkMaster);
   }
 
