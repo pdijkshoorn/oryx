@@ -42,7 +42,7 @@ public class ALSSparkGenerationRunner extends LocalGenerationRunner {
 
   private final String sparkMaster;
 
-  public ALSSparkGenerationRunner() { this(ConfigUtils.getDefaultConfig().getString("spark-master")); }
+  public ALSSparkGenerationRunner() { this(ConfigUtils.getDefaultConfig().getString("model.spark-master")); }
 
   public ALSSparkGenerationRunner(String sparkMaster) {
     this.sparkMaster = Preconditions.checkNotNull(sparkMaster);
