@@ -25,6 +25,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 
 public final class ALSTypes {
@@ -34,33 +35,37 @@ public final class ALSTypes {
   public static final PType<Long> LONGS = Avros.longs();
 
   public static final PType<float[]> FLOAT_ARRAY = Avros.derivedImmutable(float[].class,
-       new MapFn<FloatArray, float[]>() {
+       new MapFn<ByteBuffer, float[]>() {
          @Override
-         public float[] map(FloatArray input) {
-           return input.getValues();
+         public float[] map(ByteBuffer input) {
+           float[] ret = new float[input.getInt()];
+           for (int i = 0; i < ret.length; i++) {
+             ret[i] = input.getFloat();
+           }
+           return ret;
          }
        },
-       new MapFn<float[], FloatArray>() {
+       new MapFn<float[], ByteBuffer>() {
          @Override
-         public FloatArray map(float[] input) {
-           return new FloatArray(input);
+         public ByteBuffer map(float[] input) {
+           byte[] ret = new byte[4 * (1 + input.length)];
+           ByteBuffer bb = ByteBuffer.wrap(ret);
+           bb.putInt(input.length);
+           for (int i = 0; i < input.length; i++) {
+             bb.putFloat(input[i]);
+           }
+           return bb;
          }
-       }, Avros.reflects(FloatArray.class));
+       }, Avros.bytes());
 
-  public static final class FloatArray {
-    public float[] values;
-    public FloatArray() {
-      this(null);
-    }
-    public FloatArray(float[] values) {
-      this.values = values;
-    }
-    public float[] getValues() {
-      return values;
-    }
-  }
-
-  public static final PType<NumericIDValue> IDVALUE = Avros.reflects(NumericIDValue.class);
+  public static final PType<NumericIDValue> IDVALUE = Avros.derivedImmutable(NumericIDValue.class,
+      new MapFn<Pair<Long, Float>, NumericIDValue>() { public NumericIDValue map(Pair<Long, Float> in) {
+        return new NumericIDValue(in.first(), in.second());
+      }},
+      new MapFn<NumericIDValue, Pair<Long, Float>>() { public Pair<Long, Float> map(NumericIDValue in) {
+        return Pair.of(in.getID(), in.getValue());
+      }},
+      Avros.pairs(Avros.longs(), Avros.floats()));
 
   public static final PType<LongSet> ID_SET = Avros.derivedImmutable(LongSet.class,
       new MapFn<Collection<Long>, LongSet>() {

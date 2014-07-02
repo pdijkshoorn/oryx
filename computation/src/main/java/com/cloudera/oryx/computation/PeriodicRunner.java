@@ -68,9 +68,10 @@ public final class PeriodicRunner implements Runnable, Closeable {
 
   private static final Map<String,List<Class<? extends GenerationRunner>>> RUNNERS;
   static {
-    List<Class<? extends GenerationRunner>> alsRunners = Lists.newArrayListWithCapacity(2);
-    alsRunners.add(ALSSparkGenerationRunner.class);
+    List<Class<? extends GenerationRunner>> alsRunners = Lists.newArrayListWithCapacity(3);
+    alsRunners.add(ALSLocalGenerationRunner.class);
     alsRunners.add(ALSDistributedGenerationRunner.class);
+    alsRunners.add(ALSSparkGenerationRunner.class);
     List<Class<? extends GenerationRunner>> kmeansRunners = Lists.newArrayListWithCapacity(2);
     kmeansRunners.add(KMeansLocalGenerationRunner.class);
     kmeansRunners.add(KMeansDistributedGenerationRunner.class);
@@ -265,21 +266,29 @@ public final class PeriodicRunner implements Runnable, Closeable {
   }
 
   private GenerationRunner buildGenerationRunner() {
-    List<Class<? extends GenerationRunner>> localDistributed = RUNNERS.get(config.getString("model.type"));
-    Preconditions.checkNotNull(localDistributed,
+    List<Class<? extends GenerationRunner>> localDistributedSpark = RUNNERS.get(config.getString("model.type"));
+    Preconditions.checkNotNull(localDistributedSpark,
                                "Unspecified or unsupported model type: %s",
                                config.getString("model.type"));
     Config config = ConfigUtils.getDefaultConfig();
-    boolean localComputation;
+    int computationIndex = 1; // MR by default
     if (config.hasPath("model.local")) {
       log.warn("model.local is deprecated; use model.local-computation");
-      localComputation = config.getBoolean("model.local");
-    } else {
-      localComputation = config.getBoolean("model.local-computation");
+      if (config.getBoolean("model.local")) {
+        computationIndex = 0;
+      }
+    } else if (config.getBoolean("model.local-computation")) {
+      computationIndex = 0;
+    } else if (config.getBoolean("model.spark")) {
+      computationIndex = 2;
     }
-    Class<? extends GenerationRunner> runnerClass =
-        localComputation ? localDistributed.get(0) : localDistributed.get(1);
-    return ClassUtils.loadInstanceOf(runnerClass);
+    if (computationIndex < localDistributedSpark.size()) {
+      Class<? extends GenerationRunner> runnerClass = localDistributedSpark.get(computationIndex);
+      return ClassUtils.loadInstanceOf(runnerClass);
+    } else {
+      log.error("Invalid model configuration mode (local|MR|spark)");
+      return null;
+    }
   }
 
 }
