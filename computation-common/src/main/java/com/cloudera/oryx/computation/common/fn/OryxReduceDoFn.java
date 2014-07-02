@@ -37,23 +37,22 @@ public abstract class OryxReduceDoFn<K, V, T> extends DoFn<Pair<K, V>, T> {
 
   @Override
   protected final Configuration getConfiguration() {
+    if (configuration == null) {
+      return super.getConfiguration();
+    }
     return configuration;
   }
 
   @Override
   public void initialize() {
     super.initialize();
-    this.configuration = OryxConfiguration.get(getContext().getConfiguration());
-
-    ConfigUtils.overlayConfigOnDefault(configuration.get(JobStep.CONFIG_SERIALIZATION_KEY));
+    Configuration rawConfiguration = getConfiguration();
+    ConfigUtils.overlayConfigOnDefault(rawConfiguration.get(JobStep.CONFIG_SERIALIZATION_KEY));
+    this.configuration = OryxConfiguration.get(rawConfiguration);
 
     numPartitions = getContext().getNumReduceTasks();
-    if (numPartitions != 1) {
-      partition = configuration.getInt(MRJobConfig.TASK_PARTITION, -1);
-      Preconditions.checkArgument(numPartitions > 0, "# partitions must be positive: %s", numPartitions);
-      Preconditions.checkArgument(partition >= 0 && partition < numPartitions,
-          "Partitions must be in [0,# partitions): %s",
-          partition);
+    if (numPartitions > 1) {
+      partition = configuration.getInt(MRJobConfig.TASK_PARTITION, 0);
     } else {
       partition = 0;
     }

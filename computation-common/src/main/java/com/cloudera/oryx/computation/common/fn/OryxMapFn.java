@@ -39,8 +39,8 @@ public abstract class OryxMapFn<S, T> extends MapFn<S, T> {
     super.initialize();
     Configuration rawConfiguration = super.getConfiguration();
     log.info("Setup of {} with config {}", this, rawConfiguration);
+    ConfigUtils.overlayConfigOnDefault(rawConfiguration.get(JobStep.CONFIG_SERIALIZATION_KEY));
     this.configuration = OryxConfiguration.get(rawConfiguration);
-    ConfigUtils.overlayConfigOnDefault(configuration.get(JobStep.CONFIG_SERIALIZATION_KEY));
   }
 
   @Override
