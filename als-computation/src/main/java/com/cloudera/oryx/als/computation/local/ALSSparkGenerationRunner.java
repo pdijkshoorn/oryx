@@ -34,6 +34,8 @@ import com.google.common.io.Files;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.spark.SparkPipeline;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,12 +69,21 @@ public class ALSSparkGenerationRunner extends LocalGenerationRunner {
     ALSModelBuilder modelBuilder = new ALSModelBuilder(store);
     ALSJobStepConfig jobStepConfig = new ALSJobStepConfig(getInstanceDir(), getGenerationID(), getLastGenerationID(),
         0, false);
-    Pipeline sp = new SparkPipeline(sparkMaster, "ALS", this.getClass());
+    SparkConf sparkConf = new SparkConf()
+        .set("spark.executor.memory", "2g")
+        .set("spark.storage.memoryFraction", "0.4");
+    JavaSparkContext jsc = new JavaSparkContext(sparkMaster, "ALS", sparkConf);
+    String[] jars = JavaSparkContext.jarOfClass(this.getClass());
+    if (jars != null && jars.length > 0) {
+      for (String jar : jars) {
+        jsc.addJar(jar);
+      }
+    }
+    SparkPipeline sp = new SparkPipeline(jsc, "ALS");
 
     Configuration conf = sp.getConfiguration();
     copyConf(OryxConfiguration.get(), conf);
     conf.set(CONFIG_SERIALIZATION_KEY, ConfigUtils.getDefaultConfig().root().render());
-
     modelBuilder.build(sp.readTextFile(generationPrefix + "inbound/"), jobStepConfig);
 
     File tempOutDir = Files.createTempDir();
@@ -86,6 +97,7 @@ public class ALSSparkGenerationRunner extends LocalGenerationRunner {
 
     store.uploadDirectory(generationPrefix, tempOutDir, false);
     sp.done();
+    jsc.stop();
   }
 
   static void copyConf(Configuration from, Configuration to) {

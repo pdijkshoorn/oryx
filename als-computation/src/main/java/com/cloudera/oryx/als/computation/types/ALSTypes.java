@@ -25,8 +25,9 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
 
-import java.nio.ByteBuffer;
+import java.util.AbstractList;
 import java.util.Collection;
+import java.util.List;
 
 public final class ALSTypes {
 
@@ -35,28 +36,26 @@ public final class ALSTypes {
   public static final PType<Long> LONGS = Avros.longs();
 
   public static final PType<float[]> FLOAT_ARRAY = Avros.derivedImmutable(float[].class,
-       new MapFn<ByteBuffer, float[]>() {
+       new MapFn<Collection<Float>, float[]>() {
          @Override
-         public float[] map(ByteBuffer input) {
-           float[] ret = new float[input.getInt()];
+         public float[] map(Collection<Float> input) {
+           List<Float> in = (List) input;
+           float[] ret = new float[input.size()];
            for (int i = 0; i < ret.length; i++) {
-             ret[i] = input.getFloat();
+             ret[i] = in.get(i);
            }
            return ret;
          }
        },
-       new MapFn<float[], ByteBuffer>() {
+       new MapFn<float[], Collection<Float>>() {
          @Override
-         public ByteBuffer map(float[] input) {
-           byte[] ret = new byte[4 * (1 + input.length)];
-           ByteBuffer bb = ByteBuffer.wrap(ret);
-           bb.putInt(input.length);
-           for (int i = 0; i < input.length; i++) {
-             bb.putFloat(input[i]);
-           }
-           return bb;
-         }
-       }, Avros.bytes());
+         public Collection<Float> map(final float[] input) {
+           return new AbstractList<Float>() {
+             public int size() { return input.length; }
+             public Float get(int i) { return input[i]; }
+           };
+         };
+       }, Avros.collections(Avros.floats()));
 
   public static final PType<NumericIDValue> IDVALUE = Avros.derivedImmutable(NumericIDValue.class,
       new MapFn<Pair<Long, Float>, NumericIDValue>() { public NumericIDValue map(Pair<Long, Float> in) {
