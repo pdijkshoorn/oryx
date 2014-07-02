@@ -18,6 +18,7 @@ package com.cloudera.oryx.als.computation.popular;
 import com.cloudera.oryx.common.collection.LongFloatMap;
 import com.cloudera.oryx.common.collection.LongSet;
 import com.cloudera.oryx.common.iterator.LongPrimitiveIterator;
+import com.cloudera.oryx.computation.common.fn.OryxDoFn;
 import com.cloudera.oryx.computation.common.fn.OryxMapFn;
 import com.google.common.base.Preconditions;
 import org.apache.crunch.Emitter;
@@ -25,7 +26,7 @@ import org.apache.crunch.Pair;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.partition.HashPartitioner;
 
-public final class PopularMapFn extends OryxMapFn<Pair<Long, LongFloatMap>, Pair<Integer, LongSet>> {
+public final class PopularMapFn extends OryxDoFn<Pair<Long, LongFloatMap>, Pair<Integer, LongSet>> {
 
   private static final Partitioner<Long,?> HASHER = new HashPartitioner<Long, Object>();
   private static final int CHUNK_SIZE = 4096;
@@ -58,11 +59,6 @@ public final class PopularMapFn extends OryxMapFn<Pair<Long, LongFloatMap>, Pair
     if (!targetIDs.isEmpty()) {
       emitter.emit(Pair.of(partition, targetIDs));
     }
-  }
-
-  @Override
-  public Pair<Integer, LongSet> map(Pair<Long, LongFloatMap> input) {
-    throw new UnsupportedOperationException("process() should have been called!");
   }
 
 }

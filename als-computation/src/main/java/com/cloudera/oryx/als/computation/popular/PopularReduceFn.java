@@ -26,8 +26,6 @@ public final class PopularReduceFn extends OryxReduceDoFn<Integer, Iterable<Long
 
   @Override
   public void process(Pair<Integer, Iterable<LongSet>> input, Emitter<Long> emitter) {
-    Preconditions.checkState(input.first() == getPartition(),
-                             "Key must match partition: %s != %s", input.first(), getPartition());
     for (LongSet set : input.second()) {
       LongPrimitiveIterator it = set.iterator();
       while (it.hasNext()) {
