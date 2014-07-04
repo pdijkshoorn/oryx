@@ -19,15 +19,14 @@ import com.cloudera.oryx.als.common.NumericIDValue;
 import com.cloudera.oryx.common.collection.LongFloatMap;
 import com.cloudera.oryx.common.collection.LongSet;
 
+import com.cloudera.oryx.computation.common.types.Serializables;
 import com.google.common.collect.Lists;
 import org.apache.crunch.Pair;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
 
-import java.util.AbstractList;
 import java.util.Collection;
-import java.util.List;
 
 public final class ALSTypes {
 
@@ -35,27 +34,7 @@ public final class ALSTypes {
 
   public static final PType<Long> LONGS = Avros.longs();
 
-  public static final PType<float[]> FLOAT_ARRAY = Avros.derivedImmutable(float[].class,
-       new MapFn<Collection<Float>, float[]>() {
-         @Override
-         public float[] map(Collection<Float> input) {
-           List<Float> in = (List) input;
-           float[] ret = new float[input.size()];
-           for (int i = 0; i < ret.length; i++) {
-             ret[i] = in.get(i);
-           }
-           return ret;
-         }
-       },
-       new MapFn<float[], Collection<Float>>() {
-         @Override
-         public Collection<Float> map(final float[] input) {
-           return new AbstractList<Float>() {
-             public int size() { return input.length; }
-             public Float get(int i) { return input[i]; }
-           };
-         };
-       }, Avros.collections(Avros.floats()));
+  public static final PType<float[]> FLOAT_ARRAY = Serializables.avro(float[].class);
 
   public static final PType<NumericIDValue> IDVALUE = Avros.derivedImmutable(NumericIDValue.class,
       new MapFn<Pair<Long, Float>, NumericIDValue>() { public NumericIDValue map(Pair<Long, Float> in) {

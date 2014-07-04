@@ -49,7 +49,7 @@ public abstract class AbstractModelBuilder<Input, Output, Conf extends JobStepCo
   }
 
   protected final <T> Source<T> avroInput(String inputPathKey, PType<T> avroType) {
-    return From.avroFile(Namespaces.toPath(inputPathKey), (AvroType<T>) avroType);
+    return From.avroFile(Namespaces.toPath(inputPathKey), avroType);
   }
 
   protected final Source<String> textInput(String inputPathKey) {
@@ -67,6 +67,7 @@ public abstract class AbstractModelBuilder<Input, Output, Conf extends JobStepCo
   protected final Target compressedTextOutput(Configuration conf, String outputPathKey) {
     // The way this is used, it doesn't seem like we can just set the object in getConf(). Need
     // to set the copy in the MRPipeline directly?
+    conf.setBoolean("mapred.output.compress", true);
     conf.setClass(FileOutputFormat.COMPRESS_CODEC, GzipCodec.class, CompressionCodec.class);
     conf.setClass(MRJobConfig.MAP_OUTPUT_COMPRESS_CODEC, SnappyCodec.class, CompressionCodec.class);
     return To.textFile(Namespaces.toPath(outputPathKey));
