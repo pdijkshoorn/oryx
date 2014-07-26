@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.oryx.als.computation.local;
+package com.cloudera.oryx.als.computation;
 
 import com.cloudera.oryx.als.common.pmml.ALSModelDescription;
-import com.cloudera.oryx.als.computation.ALSJobStepConfig;
 import com.cloudera.oryx.als.computation.modelbuilder.ALSModelBuilder;
-import com.cloudera.oryx.common.io.IOUtils;
 import com.cloudera.oryx.common.servcomp.Namespaces;
 import com.cloudera.oryx.common.servcomp.OryxConfiguration;
 import com.cloudera.oryx.common.servcomp.Store;
@@ -31,7 +29,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
-import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.spark.SparkPipeline;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
@@ -39,8 +36,6 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 

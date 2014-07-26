@@ -17,7 +17,6 @@ package com.cloudera.oryx.als.computation;
 
 import java.io.File;
 
-import com.cloudera.oryx.als.computation.local.ALSSparkGenerationRunner;
 import com.google.common.io.Files;
 import org.junit.Assume;
 import org.junit.Before;

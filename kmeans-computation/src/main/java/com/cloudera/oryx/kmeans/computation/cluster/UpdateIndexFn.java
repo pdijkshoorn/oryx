@@ -27,7 +27,7 @@ public final class UpdateIndexFn extends OryxDoFn<Pair<Integer, RealVector>, KSk
   private String indexKey;
   private KSketchIndex index;
 
-  UpdateIndexFn(String indexKey) {
+  public UpdateIndexFn(String indexKey) {
     this.indexKey = indexKey;
   }
 

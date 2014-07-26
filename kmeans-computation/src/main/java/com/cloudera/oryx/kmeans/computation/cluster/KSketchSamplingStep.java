@@ -86,8 +86,9 @@ public final class KSketchSamplingStep extends KMeansJobStep {
     return p;
   }
 
-  public static KSketchIndex createInitialIndex(ClusterSettings settings,
-                                                 PCollection<Pair<Integer, RealVector>> input) {
+  public static KSketchIndex createInitialIndex(
+      ClusterSettings settings,
+      PCollection<Pair<Integer, RealVector>> input) {
     RealVector[] init = new RealVector[settings.getCrossFolds()];
     for (Pair<Integer, RealVector> rv : input.materialize()) {
       if (init[rv.first()] == null) {

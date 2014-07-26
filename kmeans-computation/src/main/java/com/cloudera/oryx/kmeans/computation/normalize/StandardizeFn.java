@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-final class StandardizeFn extends OryxDoFn<Record, RealVector> {
+public final class StandardizeFn extends OryxDoFn<Record, RealVector> {
 
   private final String summaryKey;
   private final NormalizeSettings settings;
@@ -45,21 +45,21 @@ final class StandardizeFn extends OryxDoFn<Record, RealVector> {
   private int expansion;
   private boolean sparse;
 
-  StandardizeFn() {
+  public StandardizeFn() {
     this(new NormalizeSettings(), ImmutableList.<Integer>of(), ImmutableList.<Integer>of(), "");
   }
 
-  StandardizeFn(Summary summary) {
+  public StandardizeFn(Summary summary) {
     this(new NormalizeSettings(), ImmutableList.<Integer>of(), ImmutableList.<Integer>of(), "");
     this.summary = summary;
   }
 
-  StandardizeFn(Summary summary, Transform defaultTransform) {
+  public StandardizeFn(Summary summary, Transform defaultTransform) {
     this(new NormalizeSettings(defaultTransform), ImmutableList.<Integer>of(), ImmutableList.<Integer>of(), "");
     this.summary = summary;
   }
 
-  StandardizeFn(NormalizeSettings settings,
+  public StandardizeFn(NormalizeSettings settings,
                 Collection<Integer> ignoredColumns,
                 Collection<Integer> idColumns,
                 String summaryKey) {

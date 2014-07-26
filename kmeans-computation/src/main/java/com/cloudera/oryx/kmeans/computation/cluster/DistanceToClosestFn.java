@@ -27,7 +27,7 @@ public final class DistanceToClosestFn<V extends RealVector> extends OryxDoFn<Pa
   private String indexKey;
   private KSketchIndex index;
 
-  DistanceToClosestFn(String indexKey) {
+  public DistanceToClosestFn(String indexKey) {
     this.indexKey = indexKey;
   }
 

@@ -260,7 +260,8 @@ public class ALSModelBuilder extends AbstractModelBuilder<String, String, ALSJob
     return modulus;
   }
 
-  protected boolean areIterationsDone(int iterationNumber, JobStepConfig jobStepConfig,
+  protected boolean areIterationsDone(int iterationNumber,
+                                      JobStepConfig jobStepConfig,
                                       Iterable<String> sample,
                                       Iterable<String> lastSample) throws IOException {
 
