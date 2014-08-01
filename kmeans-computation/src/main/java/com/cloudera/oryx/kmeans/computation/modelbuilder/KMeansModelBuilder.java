@@ -22,7 +22,6 @@ import com.cloudera.oryx.common.servcomp.Namespaces;
 import com.cloudera.oryx.common.settings.ConfigUtils;
 import com.cloudera.oryx.common.settings.InboundSettings;
 import com.cloudera.oryx.computation.common.crossfold.Crossfold;
-import com.cloudera.oryx.computation.common.fn.StringSplitFn;
 import com.cloudera.oryx.computation.common.modelbuilder.AbstractModelBuilder;
 import com.cloudera.oryx.computation.common.records.DataType;
 import com.cloudera.oryx.computation.common.records.Record;
