@@ -42,7 +42,7 @@ import com.cloudera.oryx.serving.web.AbstractOryxServlet;
  */
 public abstract class AbstractALSServlet extends AbstractOryxServlet {
 
-  private static final int DEFAULT_HOW_MANY = 10;
+  private static final int DEFAULT_HOW_MANY = 100;
 
   private static final String KEY_PREFIX = AbstractALSServlet.class.getName();
   public static final String RECOMMENDER_KEY = KEY_PREFIX + ".RECOMMENDER";
