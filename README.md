@@ -16,7 +16,7 @@ Computation Layer and Serving Layer, respectively, implement a
 Models are exchanged in [PMML](http://www.dmg.org/v4-1/GeneralStructure.html) format.
 It is not a library, visualization tool, exploratory analytics tool, or environment.
 
-# Architecture
+# Architecture ( just a test)
 
 <img align="right" src="https://raw.github.com/wiki/cloudera/oryx/OryxArchitecture.png" width="481" height="286"/>
 
