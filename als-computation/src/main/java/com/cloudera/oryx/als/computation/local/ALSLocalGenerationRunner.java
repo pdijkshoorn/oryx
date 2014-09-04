@@ -20,7 +20,6 @@ import com.typesafe.config.Config;
 
 import java.io.File;
 import java.io.IOException;
-
 import com.cloudera.oryx.als.common.StringLongMapping;
 import com.cloudera.oryx.als.common.factorizer.MatrixFactorizer;
 import com.cloudera.oryx.common.collection.LongFloatMap;
@@ -35,6 +34,7 @@ import com.cloudera.oryx.computation.common.LocalGenerationRunner;
 
 public final class ALSLocalGenerationRunner extends LocalGenerationRunner {
 
+	
   @Override
   protected void runSteps() throws IOException, InterruptedException, JobException {
 
@@ -105,6 +105,7 @@ public final class ALSLocalGenerationRunner extends LocalGenerationRunner {
 
       if (config.getBoolean("model.recommend.compute")) {
         new MakeRecommendations(tempOutDir, knownItemIDs, als.getX(), als.getY(), idMapping).call();
+
       }
 
       if (config.getBoolean("model.item-similarity.compute")) {
@@ -120,6 +121,9 @@ public final class ALSLocalGenerationRunner extends LocalGenerationRunner {
       IOUtils.deleteRecursively(tempOutDir);
       IOUtils.deleteRecursively(lastInputDir);
       IOUtils.deleteRecursively(lastTestDir);
+      Config myConfig = ConfigUtils.getDefaultConfig();
+      if (myConfig.getBoolean("model.recommend.specificUsers"))
+      	System.exit(0);
     }
   }
 

@@ -17,10 +17,14 @@ package com.cloudera.oryx.als.computation.local;
 
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
@@ -69,7 +73,31 @@ final class MakeRecommendations implements Callable<Object> {
 
     Config config = ConfigUtils.getDefaultConfig();
     final int howMany = config.getInt("model.recommend.how-many");
-
+    
+    //Rahim: Users that are available in the users file are those that we want to do recommendation for them.
+    final LongSet users = new LongSet();
+    final boolean recsForSpecUsers = config.getBoolean("model.recommend.specificUsers");
+    if (recsForSpecUsers){
+		String usersFile=config.getString("model.recommend.usersFile");	
+		try {
+		BufferedReader reader = new BufferedReader(new FileReader(usersFile));
+		while(true) {
+				String line = reader.readLine();
+				if (line == null) {
+					break;
+				}
+				users.add(Long.parseLong(line.trim()));
+				log.info("User:"+Long.parseLong(line.trim()));
+			} 
+		reader.close();
+		}
+	
+	catch (FileNotFoundException e) {
+		e.printStackTrace();
+	} catch (IOException e) {
+		e.printStackTrace();
+    }
+    }
     final LongPrimitiveIterator it = X.keySetIterator();
 
     final File recommendDir = new File(modelDir, "recommend");
@@ -94,6 +122,8 @@ final class MakeRecommendations implements Callable<Object> {
                     return null;
                   }
                   userID = it.nextLong();
+                  if (!users.contains(userID) && recsForSpecUsers)
+                	  continue;
                 }
                 float[] userFeatures = X.get(userID);
                 LongSet knownItemIDsForUser = knownItemIDs == null ? null : knownItemIDs.get(userID);
@@ -122,8 +152,12 @@ final class MakeRecommendations implements Callable<Object> {
     }
 
     log.info("Finished recommendations");
-
+    
+    
+    
     return null;
   }
+
+
 
 }
