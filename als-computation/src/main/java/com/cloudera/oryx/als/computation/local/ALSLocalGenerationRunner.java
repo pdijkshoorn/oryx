@@ -122,8 +122,8 @@ public final class ALSLocalGenerationRunner extends LocalGenerationRunner {
       IOUtils.deleteRecursively(lastInputDir);
       IOUtils.deleteRecursively(lastTestDir);
       Config myConfig = ConfigUtils.getDefaultConfig();
-      if (myConfig.getBoolean("model.recommend.specificUsers") && myConfig.getBoolean("model.recommend.compute") )
-      	System.exit(0);
+      //if (myConfig.getBoolean("model.recommend.specificUsers") && myConfig.getBoolean("model.recommend.compute") )
+      //	System.exit(0);
     }
   }
 

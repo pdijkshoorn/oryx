@@ -241,6 +241,9 @@ public abstract class GenerationRunner implements Callable<Object> {
       endSize = store.getSizeRecursive(Namespaces.getInstanceGenerationPrefix(instanceDir, generationID));
       dumpStats();
       log.info("Generation {} complete", generationID);
+      if (config.getBoolean("model.recommend.specificUsers") && config.getBoolean("model.recommend.compute") )
+      	System.exit(0);
+      
     }
   }
 
